@@ -16,5 +16,6 @@ Enter Tellor-Lottery/client via terminal and enter.
 then,
 ``` npm start ```
 ### Lottery Updater
-Run: TellorTimeConsole.exe at Tellor-Lottery\TellorTimeConsole\TellorTimeConsole\bin\Debug\netcoreapp3.1\TellorTimeConsole  to automatically update the tellor lottery contract.
+Run: TellorTimeConsole.exe at 
+Tellor-Lottery\TellorTimeConsole\TellorTimeConsole\bin\Debug\netcoreapp3.1\TellorTimeConsole  to automatically update the tellor lottery contract.
 
