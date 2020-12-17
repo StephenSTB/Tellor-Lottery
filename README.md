@@ -11,7 +11,7 @@ Demonstation of some of the Tellor Lottery smart contract functionality:
 
 [![Watch the video](https://img.youtube.com/vi/pVxzg3aQ4D0/hqdefault.jpg)](https://youtu.be/pVxzg3aQ4D0)
 
-## Gitcoin
+## Gitcoin grants 8 hackathon
 This project is a submission for gitcoin grants 8 hackathon
 
 https://gitcoin.co/issue/tellor-io/usingtellor/30/100024323
