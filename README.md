@@ -25,8 +25,9 @@ Contract is deployed on Kovan testnet.
 
 The Lottery contract pulls data from TellorPlayground that is in the following format.
 
-- Lowest order first 16 bits are allocated for the lottery round number
-- The next 36 bits are allocated for the lottery numbers where the lottery numbers are ordered ascending from highest to lowest order with each number ultizing 6 bits.
+- 68 bits are utilized.
+- Lowest order 16 bits are allocated for the lottery round number.
+- The higher order 36 bits are allocated for the lottery numbers where the lottery numbers are ordered ascending from highest to lowest order with each number ultizing 6 bits.
 
 ## Run Locally
 
