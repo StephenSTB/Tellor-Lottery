@@ -16,7 +16,7 @@ Tellor Lottery contract can be found at:
 
 https://github.com/StephenSTB/Tellor-Lottery/blob/main/TellorTimeConsole/TellorTimeConsole/TellorTimeContracts/TellorTime.sol
 
-Contract is deployed on Kovan testnetwork.
+Contract is deployed on Kovan testnet.
 
 ## Run Locally
 
