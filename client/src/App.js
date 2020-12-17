@@ -40,7 +40,7 @@ class App extends Component {
       
       console.log(accounts)
 
-      var ttdInstance = new web3.eth.Contract(TellorTime.abi, "0x171d8736037e0bca77b1f9bfcd371a92ffc5e792");
+      var ttdInstance = new web3.eth.Contract(TellorTime.abi, "0x1d819d78d430374a081c65dc2e525f839610012d");
 
       console.log("Tellor Time Address: " + ttdInstance.options.address);
 
