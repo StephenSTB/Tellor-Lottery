@@ -16,12 +16,17 @@ This project is a submission for gitcoin grants 8 hackathon
 
 https://gitcoin.co/issue/tellor-io/usingtellor/30/100024323
 
-## Contracts
+## Contract
 Tellor Lottery contract can be found at:
 
 https://github.com/StephenSTB/Tellor-Lottery/blob/main/TellorTimeConsole/TellorTimeConsole/TellorTimeContracts/TellorTime.sol
 
 Contract is deployed on Kovan testnet.
+
+The Lottery contract pulls data from TellorPlayground that is in the following format.
+
+- Lowest order first 16 bits are allocated for the lottery round number
+- The next 36 bits are allocated for the lottery numbers where the lottery numbers are ordered ascending from highest to lowest order with each number ultizing 6 bits.
 
 ## Run Locally
 
