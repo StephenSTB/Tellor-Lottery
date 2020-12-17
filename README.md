@@ -10,6 +10,7 @@ Tellor lottery is a lottery game which utilizes Tellor Playground to recieve lot
 Enter Tellor-Lottery/client via terminal and enter.
 
 ``` npm install ```
+then,
 ``` npm start ```
 ### Lottery Updater
 
