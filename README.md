@@ -4,7 +4,8 @@ Tellor lottery is a lottery game which utilizes Tellor Playground to recieve lot
 
 ## Demo
 Demonstation of some of the Tellor Lottery smart contract functionality:
-[![Watch the video](https://i9.ytimg.com/vi/pVxzg3aQ4D0/mq2.jpg?sqp=CIzq6_4F&rs=AOn4CLCYxtXoCDIfRvrVmh0rBbHC5_1oHw)](https://youtu.be/pVxzg3aQ4D0)
+
+[![Watch the video](https://img.youtube.com/vi/pVxzg3aQ4D0/hqdefault.jpg)](https://youtu.be/pVxzg3aQ4D0)
 
 ## Contracts
 Tellor Lottery contract can be found at:
