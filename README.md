@@ -4,6 +4,9 @@ Tellor lottery is a lottery game which utilizes Tellor Playground to recieve lot
 
 ## Demo
 
+## Contracts
+Tellor Lottery contract can be found at:
+Tellor-Lottery\TellorTimeConsole\TellorTimeConsole\TellorTimeContracts\TellorTime.sol
 ## Run Locally
 
 ### Front End
@@ -13,5 +16,5 @@ Enter Tellor-Lottery/client via terminal and enter.
 then,
 ``` npm start ```
 ### Lottery Updater
-run TellorTimeConsole at Tellor-Lottery\TellorTimeConsole\TellorTimeConsole\bin\Debug\netcoreapp3.1\TellorTimeConsole  to automatically update the tellor lottery contract
+Run: TellorTimeConsole.exe at Tellor-Lottery\TellorTimeConsole\TellorTimeConsole\bin\Debug\netcoreapp3.1\TellorTimeConsole  to automatically update the tellor lottery contract.
 
