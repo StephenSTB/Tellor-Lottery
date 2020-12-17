@@ -9,7 +9,7 @@ Demonstation of some of the Tellor Lottery smart contract functionality:
 
 ## Contracts
 Tellor Lottery contract can be found at:
-https://github.com/StephenSTB/Tellor-Lottery/tree/main/TellorTimeConsole/TellorTimeConsole/TellorTimeContracts
+https://github.com/StephenSTB/Tellor-Lottery/blob/main/TellorTimeConsole/TellorTimeConsole/TellorTimeContracts/TellorTime.sol
 ## Run Locally
 
 ### Front End
