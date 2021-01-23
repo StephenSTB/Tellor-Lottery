@@ -3244,11 +3244,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "E:\\TellorTimeConsole\\TellorTimeConsole\\TellorTimeConsole.csproj",
+      "projectUniqueName": "E:\\Tellor-Lottery\\TellorTimeConsole\\TellorTimeConsole\\TellorTimeConsole.csproj",
       "projectName": "TellorTimeConsole",
-      "projectPath": "E:\\TellorTimeConsole\\TellorTimeConsole\\TellorTimeConsole.csproj",
+      "projectPath": "E:\\Tellor-Lottery\\TellorTimeConsole\\TellorTimeConsole\\TellorTimeConsole.csproj",
       "packagesPath": "C:\\Users\\PC\\.nuget\\packages\\",
-      "outputPath": "E:\\TellorTimeConsole\\TellorTimeConsole\\obj\\",
+      "outputPath": "E:\\Tellor-Lottery\\TellorTimeConsole\\TellorTimeConsole\\obj\\",
       "projectStyle": "PackageReference",
       "fallbackFolders": [
         "C:\\Program Files\\dotnet\\sdk\\NuGetFallbackFolder"

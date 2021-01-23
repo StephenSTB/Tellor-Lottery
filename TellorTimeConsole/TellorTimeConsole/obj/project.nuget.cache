@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "bhF0oEolmR5f6li5xGKEyGlp7FOC7uG34Ex+aLJ6GJ2To93eeyFKj6b59ZB3VI4GPOg2QZElsmWT5cTvZMei3w==",
+  "dgSpecHash": "2ZyB4mKw4f4kKHa0vrVnfJp096RF+spsNm+z97jFJkN29fZVD70lDsiKvrrJtWdJhf6gFE3R9Fz0oabS1BcLEQ==",
   "success": true,
-  "projectFilePath": "E:\\TellorTimeConsole\\TellorTimeConsole\\TellorTimeConsole.csproj",
+  "projectFilePath": "E:\\Tellor-Lottery\\TellorTimeConsole\\TellorTimeConsole\\TellorTimeConsole.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\PC\\.nuget\\packages\\common.logging.core\\3.4.1\\common.logging.core.3.4.1.nupkg.sha512",
     "C:\\Users\\PC\\.nuget\\packages\\microsoft.csharp\\4.0.1\\microsoft.csharp.4.0.1.nupkg.sha512",

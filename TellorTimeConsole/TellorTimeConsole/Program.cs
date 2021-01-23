@@ -14,35 +14,49 @@ using System.Threading;
 using System.Threading.Tasks;
 using TellorTimeContracts.Contracts.TellorPlayground;
 using TellorTimeContracts.Contracts.TellorPlayground.ContractDefinition;
-using TellorTimeContracts.Contracts.TellorTime;
-using TellorTimeContracts.Contracts.TellorTime.ContractDefinition;
+using TellorTimeContracts.Contracts.TellorLottery;
+using TellorTimeContracts.Contracts.TellorLottery.ContractDefinition;
+using TellorTimeContracts.Contracts.TellorLotteryPool;
+using TellorTimeContracts.Contracts.TellorLotteryPool.ContractDefinition;
+using System.Globalization;
 
 namespace TellorTimeConsole
 {
     class Program
     {
 
-        static Account account = new Account("5e525b2ce341f0f664d42d7a046aca38a76f8d75e23e96d728213089901021fd", null);
+        //static Account account = new Account("5e525b2ce341f0f664d42d7a046aca38a76f8d75e23e96d728213089901021fd", null);
 
-        static Web3 web3 = new Web3(account, "https://kovan.infura.io/v3/11319a0ca8664762980ff25ba91d99b4"); // kovan
+
+        static Account account = new Account("b2d8bc829751d1bdd00ad5a539bc3e51259bf8018a14135c526fcb3f7522e623", null);
+
+        //static Web3 web3 = new Web3(account, "https://kovan.infura.io/v3/11319a0ca8664762980ff25ba91d99b4"); // kovan
+
+        static Web3 web3 = new Web3(account, "HTTP://127.0.0.1:7545"); // Ganache
+
+        //static Web3 web3 = new Web3(account, "https://rpc-mumbai.maticvigil.com/v1/857bd788405149815e9bed09e4e0ef2b41777537",null); // mumbai
 
         static string tellorPlaygroundAddress = "0x20374E579832859f180536A69093A126Db1c8aE9";
 
         static BigInteger requestId = new BigInteger(77);
 
         // Contract Addresses
-        static string tellorTimeAddress;
+        static string tellorLotteryAddress;
+
+        static string tellorPoolAddress;
 
         // Contract Services
 
-        static TellorTimeService ttdService;
+        static TellorLotteryService tlService;
 
-        static TellorPlaygroundService tpService;
+        static TellorPlaygroundService tpgService;
+
+        static TellorLotteryPoolService tplService;
 
 
         static void Main(string[] args)
         {
-            Console.WriteLine("Tellor Time! Console Testing!");
+            Console.WriteLine("     Tellor Lottery! Console Testing!\n");
 
             InitializeSettings();
 
@@ -54,7 +68,7 @@ namespace TellorTimeConsole
 
             while (true)
             {
-                Console.WriteLine("Command: ");
+                Console.Write("Command: ");
 
                 string commandString = Console.ReadLine();
 
@@ -62,11 +76,10 @@ namespace TellorTimeConsole
 
                 Console.WriteLine();
 
-
                 switch (command[0].ToLower())
                 {
                     case "deploy":
-                        DeployTellorTimeContract().Wait();
+                        DeployTellorLotteryContract().Wait();
                         Console.WriteLine();
                         break;
                     case "request":
@@ -77,8 +90,8 @@ namespace TellorTimeConsole
                         DistributeWinningsTest().Wait();
                         break;
                     case "buy":
-                        Console.WriteLine($"command args {command.Length}");
-                        List<ulong> numbers = new List<ulong>(){ 10, 16, 27, 34, 36, 57 };
+                        //Console.WriteLine($"    Command args {command.Length}");
+                        List<ulong> numbers = RandomNumbers();
                         if (command.Length == 7)
                         {
                             for(int i = 1; i < 7; i++)
@@ -93,10 +106,13 @@ namespace TellorTimeConsole
                                 }
                             }
                         }
-                        Console.Write($"buy numbers:");
-                        foreach (ulong n in numbers) Console.Write($"{n},");
-                        Console.WriteLine();
+                        //Console.Write($"    buy numbers:");
+                        //foreach (ulong n in numbers) Console.Write($"{n},");
+                        //Console.WriteLine();
                         BuyTicket(numbers).Wait();
+                        break;
+                    case "winners":
+                        ViewNumberOfWinners().Wait();
                         break;
                     case "view":
                         ViewTickets().Wait();
@@ -108,7 +124,40 @@ namespace TellorTimeConsole
                         GenerateTicketIDs().Wait();
                         break;
                     case "faucet":
-                        Faucet().Wait();
+                        Faucet(account.Address).Wait();
+                        break;
+                    case "switch":
+                        SwitchAccount();
+                        break;
+                    case "stake":
+                        if(command.Length > 1)
+                        {
+                            var amount = new BigInteger(int.Parse(command[1]));
+                            Stake(amount).Wait();
+                            break;
+                        }
+                        Stake(new BigInteger(0)).Wait();
+                        break;
+                    case "unstake":
+                        if (command.Length > 1)
+                        {
+                            var amount = new BigInteger(int.Parse(command[1]));
+                            UnStake(amount).Wait();
+                            break;
+                        }
+                        UnStake(new BigInteger(0)).Wait();
+                        break;
+                    case "winningnumbers":
+                        WinningNumbers(true);
+                        break;
+                    case "rng":
+                        RandomNumbers();
+                        break;
+                    case "dividend":
+                        PoolTest().Wait();
+                        break;
+                    case "balance":
+                        networkBalance().Wait();
                         break;
                     default:
                         Console.WriteLine("Invalid command.");
@@ -120,15 +169,23 @@ namespace TellorTimeConsole
 
         private static void InitializeSettings()
         {
+
+
             // Initialize contract variables.
             Configuration configFile = ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.None);
             KeyValueConfigurationCollection Settings = configFile.AppSettings.Settings;
 
-            tellorTimeAddress = Settings["TellorTimeAddress"].Value;
+            tellorLotteryAddress = Settings["TellorLotteryAddress"].Value;
 
-            ttdService = new TellorTimeService(web3, tellorTimeAddress);
+            tellorPlaygroundAddress = Settings["TellorPlaygroundAddress"].Value;
 
-            tpService = new TellorPlaygroundService(web3, tellorPlaygroundAddress);
+            tellorPoolAddress = Settings["TellorPoolAddress"].Value;
+
+            tlService = new TellorLotteryService(web3, tellorLotteryAddress);
+
+            tpgService = new TellorPlaygroundService(web3, tellorPlaygroundAddress);
+
+            tplService = new TellorLotteryPoolService(web3, tellorPoolAddress);
 
         }
 
@@ -136,6 +193,7 @@ namespace TellorTimeConsole
         {
             while (true)
             {
+                Thread.Sleep(36000000);
                 Console.WriteLine("Updater");
 
                 RequestAndUpdateLatestNumbers().Wait();
@@ -147,16 +205,190 @@ namespace TellorTimeConsole
 
         }
 
+        private static void SwitchAccount()
+        {
+            if (account.PrivateKey.Equals("b2d8bc829751d1bdd00ad5a539bc3e51259bf8018a14135c526fcb3f7522e623"))
+            {
+                account = new Account("3ea5dca060d1fa3b60661acf3b7857ceb09082ee779b5110fe2fe57a6ebb9b39", null);
+            }
+            else
+            {
+                account = new Account("b2d8bc829751d1bdd00ad5a539bc3e51259bf8018a14135c526fcb3f7522e623", null);
+            }
+            
+            web3 = new Web3(account, "HTTP://127.0.0.1:7545");
+            InitializeSettings();
+        }
+
+        private static async Task PoolTest()
+        {
+            Console.WriteLine($"Testing tellor lottery pool functionality.");
+            try
+            {
+                List<ulong> numbers = new List<ulong>(){ 0,0,0,0,0,0 };
+
+                Console.WriteLine("   Recieve Pool Tokens..");
+
+                var ticketCost = await tlService.TicketCostQueryAsync();
+                for (int i = 0; i < 2; i++)
+                {
+
+                    numbers = RandomNumbers();
+
+                    BuyTicket(numbers).Wait();
+                }
+
+                
+                Stake(1).Wait();
+
+                var balance = Web3.Convert.FromWei(await tpgService.BalanceOfQueryAsync(account.Address));
+
+                RequestAndUpdateLatestNumbers().Wait();
+
+                Console.WriteLine($"    Harvesting dividends..\n");
+
+                Console.Write($"    Pre harvest TRBP: {balance}\n");
+
+                await tplService.HarvestRequestAsync();
+
+                var postHarvestBalance = Web3.Convert.FromWei(await tpgService.BalanceOfQueryAsync(account.Address));
+
+                Console.Write($"    Post harvest: {postHarvestBalance}\n");
+
+                Console.WriteLine($"    Unstaking tellor pool tokens..");
+
+                await tplService.UnstakeRequestAsync(Web3.Convert.ToWei(1));
+
+                var stake = await tplService.ViewStakeQueryAsync();
+
+                Console.WriteLine($"    Stake: {stake.Amount}");
+
+
+            }catch(Exception e)
+            {
+                Console.WriteLine(e.Message);
+            }
+
+        }
+
+        private static async Task Stake(BigInteger amount)
+        {
+            BigInteger amt;
+
+            if (amount == 0)
+            {
+                amt = await tplService.BalanceOfQueryAsync(account.Address);
+            }
+            else
+            {
+                amt = Web3.Convert.ToWei(amount);
+            }
+            try
+            {
+                Console.WriteLine($"Staking {Web3.Convert.FromWei(amt)} Tokens..");
+                //var stake = await tplService.ViewStakeQueryAsync();
+
+                //Console.WriteLine($"    Pool number: {stake.PoolNumber}, Staked: {stake.Amount}\n");
+
+                await tplService.ApproveRequestAndWaitForReceiptAsync(tellorPoolAddress, amt);
+
+                //var allowance = await tplService.AllowanceQueryAsync(account.Address, tellorPoolAddress);
+
+                //Console.WriteLine($"    Allowance: {Web3.Convert.FromWei(allowance)} amount: {Web3.Convert.FromWei(amt)}");
+
+                var gas = Web3.Convert.FromWei(await web3.Eth.GetBalance.SendRequestAsync(account.Address));
+
+                var stakeReceipt = await tplService.StakeRequestAndWaitForReceiptAsync(amt);
+
+                gas -= Web3.Convert.FromWei(await web3.Eth.GetBalance.SendRequestAsync(account.Address));
+
+                var stake = await tplService.ViewStakeQueryAsync();
+
+                Console.WriteLine($"    Gas: {gas}");
+
+                Console.WriteLine($"    Pool number: {stake.PoolNumber}, Staked: {stake.Amount}\n");
+
+                var currentStaked = await tplService.CurrentStakedQueryAsync();
+
+                var tpValue = await tplService.BalanceOfQueryAsync(tellorPoolAddress);
+
+                Console.WriteLine($"    {account.Address} Current Staked: {Web3.Convert.FromWei(currentStaked)} Confirmed in Contract: {Web3.Convert.FromWei(tpValue)}\n");
+            }
+            catch(Exception e)
+            {
+                Console.WriteLine(e.Message);
+            }
+            
+        }
+
+        private static async Task UnStake(BigInteger amount)
+        {
+            BigInteger amt;
+            if(amount == 0)
+            {
+                var stake = await tplService.ViewStakeQueryAsync();
+                amt = stake.Amount;
+            }
+            else
+            {
+                amt = Web3.Convert.ToWei(amount);
+            }
+            try
+            {
+                Console.Write($"Unstaking {Web3.Convert.FromWei(amt)} tokens.\n");
+
+                var unstakeReceipt = await tplService.UnstakeRequestAsync(amt);
+
+                var stake = await tplService.ViewStakeQueryAsync();
+
+                Console.Write($"    {account.Address} Staked: {stake.Amount}");
+            }
+            catch(Exception e)
+            {
+                Console.WriteLine(e.Message);
+            }
+
+        }
+
+        private static async Task Harvest()
+        {
+            Console.WriteLine($"    Harvesting");
+        }
+
         private static async Task ViewTickets()
         {
-            var viewTicketsReceipt = await ttdService.ViewTicketsRequestAndWaitForReceiptAsync(getCompetitionStart());
-            
+            var competitionNumber = await tlService.CompetitionNumberQueryAsync();
 
+            var viewTickets = await tlService.ViewTicketsQueryAsync(competitionNumber);
+
+            Console.WriteLine($"   Tickets for Lotto round: {competitionNumber}");
+
+            for(int i = 0; i < viewTickets.TicketNumbers.Count; i++)
+            {
+                if (viewTickets.TicketNumbers[i] != 0)
+                {
+                    var numbers = viewTickets.Numbers.GetRange(i * 6, 6);
+                    Console.WriteLine($"     Ticket Number: {viewTickets.TicketNumbers[i]},  Numbers: ( {string.Join(",", numbers)} )");
+                    continue;
+                }
+                break;
+            }
+
+        }
+
+        private static async Task ViewNumberOfWinners()
+        {
+            var competitionNumber = await tlService.CompetitionNumberQueryAsync();
+
+            var winningNumbers = await tlService.NumberOfWinnersQueryAsync(competitionNumber-1);
+
+            Console.WriteLine($"      Jackpot Winners: {winningNumbers.JackpotWinners}\n      Runner-up Winners: {winningNumbers.TierTwoWinners}\n" +
+                $"      Third Tier Winners: {winningNumbers.TierThreeWinners}\n");
         }
 
         public static async Task ViewPrizePool()
         {
-            var poolReciept = await ttdService.PrizePoolQueryAsync(await ttdService.CompetitionNumberQueryAsync());
+            var poolReciept = await tlService.PrizePoolQueryAsync(await tlService.CompetitionNumberQueryAsync());
             Console.WriteLine($"prize pool : {poolReciept}");
 
         }
@@ -173,7 +405,7 @@ namespace TellorTimeConsole
             }
             Console.Write(" )\n");
 
-            var generateIDsReceipt = await ttdService.GenerateTicketIDsRequestAndWaitForReceiptAsync(numbers);
+            var generateIDsReceipt = await tlService.GenerateTicketIDsRequestAndWaitForReceiptAsync(numbers);
 
             var events = generateIDsReceipt.DecodeAllEvents<GeneratedIDsEventDTO>();
 
@@ -193,148 +425,49 @@ namespace TellorTimeConsole
 
         private static async Task DistributeWinningsTest()
         {
-            List<ulong> numbers = new List<ulong>() { 0, 0, 0, 0, 0, 0};
-
-            BigInteger numberID = new BigInteger(0);
+            Console.WriteLine("Distribute Winnings Test..");
+            List<ulong> numbers;
 
             var ethBalance = Web3.Convert.FromWei(await web3.Eth.GetBalance.SendRequestAsync(account.Address));
-            var tpBalance = Web3.Convert.FromWei(await tpService.BalanceOfQueryAsync(account.Address));
-            Console.WriteLine($"{account.Address} Eth: {ethBalance} TP: {tpBalance}");
+            var tpBalance = Web3.Convert.FromWei(await tpgService.BalanceOfQueryAsync(account.Address));
+            Console.WriteLine($"    {account.Address} Eth: {ethBalance} TP: {tpBalance}");
 
-            BigInteger competition = new BigInteger(0);
-
-            Random rng = new Random();
             try
             {
-                for (int i = 0; i < 4; i++) {
+                var ticketCost = await tlService.TicketCostQueryAsync();
+                for (int i = 0; i < 2; i++) {
 
-                    int start = 1, end = 55;
-                    Console.Write("Ticket numbers: ( ");
-                    for(int j = 0; j < 6; j++)
-                    {
-                        numbers[j] = (ulong)rng.Next(start, end);
-                        numberID += numbers[j];
+                    numbers = RandomNumbers();
 
-                        start = (int)numbers[j] + 1;
-                        end++;
-
-                        numberID = j == 5 ? numberID : numberID << 6;
-
-                        Console.Write($"{numbers[j]}");
-
-                        if (j != 5)
-                            Console.Write(",");
-                    }
-                    Console.Write(" )");
-                    Console.Write($" {numberID}");
-
-                    var ticketCost = await ttdService.TicketCostQueryAsync();
-
-                    await tpService.ApproveRequestAndWaitForReceiptAsync(tellorTimeAddress, ticketCost);
-
-                    var allowance = await tpService.AllowanceQueryAsync(account.Address, tellorTimeAddress);
-
-                    Console.Write($" {Web3.Convert.FromWei(allowance)}\n");
-
-                    BuyTicketFunction BTF = new BuyTicketFunction
-                    {
-                        FromAddress = account.Address,
-                        Numbers = numbers,
-                    };
-
-                    var buyReceipt = await ttdService.BuyTicketRequestAndWaitForReceiptAsync(BTF);
-
-                    var buySuccessEvents = buyReceipt.DecodeAllEvents<BuyTicketSuccessEventDTO>();
-
-                    foreach(EventLog<BuyTicketSuccessEventDTO> e in buySuccessEvents)
-                    {
-                        Console.WriteLine($"{e.Event.CompetitionNumber}, {e.Event.TicketNumber}, ({string.Join(",", e.Event.Numbers)}), {e.Event.Sender}, {Web3.Convert.FromWei(e.Event.PrizePool)}");
-                    }
-
-                    var buyErrorEvents = buyReceipt.DecodeAllEvents<BuyTicketErrorEventDTO>();
-
-                    foreach(EventLog<BuyTicketErrorEventDTO> e in buyErrorEvents)
-                    {
-                        Console.WriteLine($"{e.Event.Error}");
-                    }
-
-                    numberID = new BigInteger(0);
+                    BuyTicket(numbers).Wait();
                 }
 
-            
-                BigInteger winNumberId = new BigInteger(0); // 
-                List<ulong> winNumbers = new List<ulong>() { 08, 11, 14, 39, 48, 53 };
-                List<ulong> fiveMatchNumbers = new List<ulong>() { 10, 11, 14, 39, 48, 53 };
 
-                for (int i = 0; i < 6; i++)
-                {
-                    winNumberId += winNumbers[i];
-                    winNumberId = i == 5 ? winNumberId : winNumberId << 6;
-                }
+                List<ulong> winNumbers = WinningNumbers(false);
+                List<ulong> tierTwoNumbers = WinningNumbers(false);
+                List<ulong> tierThreeNumbers = WinningNumbers(false);
 
-                Console.WriteLine($"buying winning ticket...");
 
-                var ticketC = await ttdService.TicketCostQueryAsync();
+                Console.WriteLine($"Buying winning ticket...");
 
-                await tpService.ApproveRequestAndWaitForReceiptAsync(tellorTimeAddress, ticketC);
-
-                var allow = await tpService.AllowanceQueryAsync(account.Address, tellorTimeAddress);
-
-                Console.Write($" {Web3.Convert.FromWei(allow)}\n");
-
-                BuyTicketFunction BT = new BuyTicketFunction
-                {
-                    FromAddress = account.Address,
-                    Numbers = fiveMatchNumbers,
-                };
-
-                var buy = await ttdService.BuyTicketRequestAndWaitForReceiptAsync(BT);
-
-                var buyEvents = buy.DecodeAllEvents<BuyTicketSuccessEventDTO>();
-
-                foreach (EventLog<BuyTicketSuccessEventDTO> e in buyEvents)
-                {
-                    Console.WriteLine($"{e.Event.CompetitionNumber}, {string.Join(",", e.Event.Numbers)}, {e.Event.Sender}, {Web3.Convert.FromWei(e.Event.PrizePool)}");
-                    competition = e.Event.CompetitionNumber;
-                }
+                BuyTicket(winNumbers).Wait();
 
 
                 ethBalance = Web3.Convert.FromWei(await web3.Eth.GetBalance.SendRequestAsync(account.Address));
-                tpBalance = Web3.Convert.FromWei(await tpService.BalanceOfQueryAsync(account.Address));
-                Console.WriteLine($"{account.Address} Eth: {ethBalance} TP: {tpBalance}");
+                tpBalance = Web3.Convert.FromWei(await tpgService.BalanceOfQueryAsync(account.Address));
+                Console.WriteLine($"    {account.Address} Eth: {ethBalance} TP: {tpBalance}");
 
-                var ttBalance = Web3.Convert.FromWei(await tpService.BalanceOfQueryAsync(tellorTimeAddress));
-                Console.WriteLine($"Tellor Time TP: {ttBalance}");
+                var ttBalance = Web3.Convert.FromWei(await tpgService.BalanceOfQueryAsync(tellorLotteryAddress));
+                Console.WriteLine($"    Tellor Lottery TP: {ttBalance}");
 
-                var updateReceipt = await ttdService.UpdateLottoRequestAndWaitForReceiptAsync();
-
-                var updateEvent = updateReceipt.DecodeAllEvents<LottoUpdateEventDTO>();
-                foreach (EventLog<LottoUpdateEventDTO> e in updateEvent)
-                {
-                    Console.WriteLine($"{e.Event.CompetitionNumber} , {e.Event.WinningIDs[0]}");
-                }
-
-                var distributeWinnings = await ttdService.DistributeWinningsRequestAndWaitForReceiptAsync(competition);
-
-                var distributeVars = distributeWinnings.DecodeAllEvents<DistributeVariablesEventDTO>();
-
-                foreach (EventLog<DistributeVariablesEventDTO> e in distributeVars)
-                {
-                    Console.WriteLine($"jackpot pool: {e.Event.JackpotPrizePool}, five matches pool: {e.Event.FiveMatchesPrizepool}, jackpot winners {e.Event.JackpotWinnerNum}, five match winners {e.Event.FiveMatchWinnerNum}");
-                }
-
-                var winningsEvents = distributeWinnings.DecodeAllEvents<WinningsDistributedEventDTO>();
-
-                foreach (EventLog<WinningsDistributedEventDTO> e in winningsEvents)
-                {
-                    Console.WriteLine($"{e.Event.CompetitionNumber}, {e.Event.Winner}, {e.Event.Prize}");
-                }
-
+                // update the lotto.
+                RequestAndUpdateLatestNumbers().Wait();
+ 
                 ethBalance = Web3.Convert.FromWei(await web3.Eth.GetBalance.SendRequestAsync(account.Address));
-                tpBalance = Web3.Convert.FromWei(await tpService.BalanceOfQueryAsync(account.Address));
-                Console.WriteLine($"{account.Address} Eth: {ethBalance} TP: {tpBalance}");
-                ttBalance = Web3.Convert.FromWei(await tpService.BalanceOfQueryAsync(tellorTimeAddress));
-                Console.WriteLine($"Tellor Time TP: {ttBalance}");
+                tpBalance = Web3.Convert.FromWei(await tpgService.BalanceOfQueryAsync(account.Address));
+                Console.WriteLine($"    {account.Address} Eth: {ethBalance} TP: {tpBalance}");
+                ttBalance = Web3.Convert.FromWei(await tpgService.BalanceOfQueryAsync(tellorLotteryAddress));
+                Console.WriteLine($"    Tellor Lottery TP: {ttBalance}");
             }
             catch(Exception e)
             {
@@ -343,34 +476,88 @@ namespace TellorTimeConsole
             
         }
 
+        private static List<ulong> WinningNumbers(bool view)
+        {
+            WebRequest request = WebRequest.Create("https://apiloterias.com.br/app/resultado.php?loteria=megasena&token=TellorSB&concurso=");
+            WebResponse response = request.GetResponse();
+
+            //Console.WriteLine(((HttpWebResponse)response).StatusDescription);
+            
+            using (Stream dataStream = response.GetResponseStream())
+            {
+                // Open the stream using a StreamReader for easy access.
+                StreamReader reader = new StreamReader(dataStream);
+                // Read the content.
+                string responseFromServer = reader.ReadToEnd();
+
+                char[] numbers = responseFromServer.Split("dezenas")[1].Split("premiacao")[0].ToCharArray();
+
+                //Console.WriteLine(numbers);
+
+                List<ulong> winningNumbers = new List<ulong>() { 0, 0, 0, 0, 0, 0 };
+
+                int index = 0;
+
+                for(int i = 0; i < numbers.Length; i++)
+                {
+                    if (Char.IsDigit(numbers[i]))
+                    {
+                        winningNumbers[index] = ulong.Parse(numbers[i].ToString() + numbers[++i].ToString());
+                        index++;
+                    }
+                }
+                if(view)
+                    Console.WriteLine($"     Winning Numbers: ({string.Join(",", winningNumbers)})");
+
+                return winningNumbers;
+            }
+        }
+
+        private static List<ulong> RandomNumbers()
+        {
+            List<ulong> numbers = new List<ulong>() {0,0,0,0,0,0};
+
+            Random rng = new Random();
+
+            int last = 1; int mid = 27;  int end = 58;
+
+            for(int i = 0; i < 3; i++)
+            {
+                numbers[i] = (ulong)rng.Next(last, mid);
+                last = (int)numbers[i] + 1;
+                mid++;
+            }
+
+            for(int i = 3; i < 6; i++)
+            {
+                numbers[i] = (ulong)rng.Next(last, end);
+                last = (int)numbers[i] + 1;
+                end++;
+            }
+
+            //Console.WriteLine($"    Random numbers: ({string.Join(",", numbers)})");
+
+            return numbers;
+        }
+
         private static async Task BuyTicket(List<ulong> numbers)
         {
             try
             {
-                var allowance = await tpService.AllowanceQueryAsync(account.Address, tellorTimeAddress);
+                Console.WriteLine($"Buying Ticket...");
+                var allowance = await tpgService.AllowanceQueryAsync(account.Address, tellorLotteryAddress);
 
-                var ticketCost = await ttdService.TicketCostQueryAsync();
+                var ticketCost = await tlService.TicketCostQueryAsync();
 
-                //Console.WriteLine($"Ticket Cost: {ticketCost.ToString()} Allowance: {allowance}");
+
+                //Console.WriteLine($"    Ticket Cost: {ticketCost} Allowance: {Web3.Convert.FromWei(allowance)}");
 
                 if (allowance < ticketCost)
-                    await tpService.ApproveRequestAndWaitForReceiptAsync(tellorTimeAddress, ticketCost);
+                    await tpgService.ApproveRequestAndWaitForReceiptAsync(tellorLotteryAddress, ticketCost);
 
-                allowance = await tpService.AllowanceQueryAsync(account.Address, tellorTimeAddress);
+                //allowance = await tpgService.AllowanceQueryAsync(account.Address, tellorLotteryAddress);
 
-                Console.WriteLine($"{account.Address} allowance for Tellor Time: {allowance}");
-
-                // Create ticket numbers
-                //uint[] numbers = { 6, 10, 22, 34, 55, 58 };
-                //uint[] numbers = { 10, 16, 27, 34, 36, 57 };
-
-                BigInteger number = new BigInteger(0);
-
-                for (int i = 0; i < numbers.Count; i++)
-                {
-                    number += numbers[i];
-                    number = (i == numbers.Count-1) ? number : number << 6;
-                }
+                //Console.WriteLine($"    {account.Address} allowance for Tellor Lottery: {Web3.Convert.FromWei(allowance)}");
 
                 BuyTicketFunction BTF = new BuyTicketFunction
                 {
@@ -378,20 +565,20 @@ namespace TellorTimeConsole
                     Numbers = numbers,
                 };
 
-                Console.WriteLine($"number: {number}");
+                var balance = Web3.Convert.FromWei(await web3.Eth.GetBalance.SendRequestAsync(account.Address));
 
-                /*
-                var balance = Web3.Convert.FromWei(await ttdService.TellorTestQueryAsync());
+                var buyTicketReceipt = await tlService.BuyTicketRequestAndWaitForReceiptAsync(BTF);
 
-                Console.WriteLine($"Tellor p total supply {balance}");*/
+                balance = balance - Web3.Convert.FromWei(await web3.Eth.GetBalance.SendRequestAsync(account.Address));
 
-                var buyTicketReceipt = await ttdService.BuyTicketRequestAndWaitForReceiptAsync(BTF);
+                Console.Write($"      Gas: {balance}");
 
                 var buyTicketEvents = buyTicketReceipt.DecodeAllEvents<BuyTicketSuccessEventDTO>();
 
                 foreach(EventLog<BuyTicketSuccessEventDTO> e in buyTicketEvents)
                 {
-                    Console.WriteLine($"Competition number: {e.Event.CompetitionNumber} Address: {e.Event.Sender} Prize Pool: {e.Event.PrizePool} Ticket Number: {e.Event.TicketNumber} Numbers: {string.Join(",", e.Event.Numbers)}");
+                    //Console.WriteLine($"    Competition number: {e.Event.CompetitionNumber} Address: {e.Event.Sender} Prize Pool: {e.Event.PrizePool} Ticket Number: {e.Event.TicketNumber} Numbers: {string.Join(",", e.Event.Numbers)}");
+                    Console.Write($"    Ticket Number: {e.Event.TicketNumber}, Numbers: ({string.Join(",", e.Event.Numbers)})");
                 }
 
                 var buyTicketErrorEvents = buyTicketReceipt.DecodeAllEvents<BuyTicketErrorEventDTO>();
@@ -400,6 +587,10 @@ namespace TellorTimeConsole
                 {
                     Console.WriteLine($"error: {e.Event.Error} {e.Event.N}");
                 }
+
+                var poolTokens = Web3.Convert.FromWei(await tplService.BalanceOfQueryAsync(account.Address));
+
+                Console.Write($"    Lottery pool tokens: {poolTokens}\n\n");
 
             }
             catch(Exception e)
@@ -412,10 +603,12 @@ namespace TellorTimeConsole
 
         private static async Task RequestAndUpdateLatestNumbers()
         {
+
+            Console.WriteLine("Lottery Update.\n");
             WebRequest request = WebRequest.Create("https://apiloterias.com.br/app/resultado.php?loteria=megasena&token=TellorSB&concurso=");
             WebResponse response = request.GetResponse();
 
-            Console.WriteLine(((HttpWebResponse)response).StatusDescription);
+            //Console.WriteLine(((HttpWebResponse)response).StatusDescription);
 
             using (Stream dataStream = response.GetResponseStream())
             {
@@ -424,25 +617,11 @@ namespace TellorTimeConsole
                 // Read the content.
                 string responseFromServer = reader.ReadToEnd();
                 // Display the content.
-                Console.WriteLine(responseFromServer + "\n");
+                //Console.WriteLine(responseFromServer + "\n");
 
-                string[] responseDenzasSplit = responseFromServer.Split("dezenas");
-
-                string[] responsePremiacaoSplit = responseDenzasSplit[1].Split("premiacao");
-
-                string numbersUnparsedString = responsePremiacaoSplit[0];
-
-                //Console.WriteLine($" {numbersUnparsedString}");
+                string numbersUnparsedString = responseFromServer.Split("dezenas")[1].Split("premiacao")[0];
 
                 char[] numbersUnparsed = numbersUnparsedString.ToCharArray();
-
-                /*
-                foreach(char c in numbersUnparsed)
-                {
-                    Console.Write(c);
-                }*/
-
-                //Console.WriteLine();
 
                 int numbersStringIndex = 0;
 
@@ -459,18 +638,7 @@ namespace TellorTimeConsole
                     }
                 }
 
-                Console.Write("Latest winning numbers: ( ");
-                for(int i = 0; i < numbers.Length; i++)
-                {
-                    Console.Write(numbers[i]);
-                    if(i < numbers.Length - 1)
-                    {
-                        Console.Write(", ");
-                    }
-                }
-                Console.Write(" )\n\n");
-
-                //uint mask = 63;
+                Console.Write($"    Latest winning numbers: ({string.Join(",", numbers)})\n");
 
                 BigInteger lottoValue = new BigInteger(0);
 
@@ -481,20 +649,20 @@ namespace TellorTimeConsole
                     lottoValue = (n == numbers[5]) ? lottoValue : lottoValue << 6;
                 }
 
-                Console.WriteLine($"Tellor Playground lotto value: {lottoValue}");
+                Console.WriteLine($"    Tellor Playground lotto value: {lottoValue}");
 
                 // Retrieve the competition number from the responseFromServer.
                 var competitionNumber = new BigInteger(int.Parse(responseFromServer.Split("numero_concurso\":")[1].Split(",\"data_concurso")[0]));
 
-                Console.WriteLine($"{competitionNumber}");
+                //Console.WriteLine($"{competitionNumber}");
 
                 lottoValue = lottoValue << 16;
 
                 lottoValue += competitionNumber;
 
-                var cNumber = await ttdService.CompetitionNumberQueryAsync();
+                var cNumber = await tlService.CompetitionNumberQueryAsync();
 
-                Console.WriteLine(cNumber);
+                //Console.WriteLine(cNumber);
 
                 // Condition to determine if the lotto numbers need to be updated in the Tellor Playground.
                 if (cNumber.Equals(competitionNumber))
@@ -502,26 +670,52 @@ namespace TellorTimeConsole
                     try
                     {
                         // Submit the new lotto numbers.
-                        await tpService.SubmitValueRequestAndWaitForReceiptAsync(requestId, lottoValue);
+                        await tpgService.SubmitValueRequestAndWaitForReceiptAsync(requestId, lottoValue);
 
-                        // Update tellor time contract.
-                        var updateLottoReceipt = await ttdService.UpdateLottoRequestAndWaitForReceiptAsync();
+                        Thread.Sleep(3000);
+
+                        var gas = Web3.Convert.FromWei(await web3.Eth.GetBalance.SendRequestAsync(account.Address));
+                            
+                        // Update tellor Lottery contract.
+                        var updateLottoReceipt = await tlService.UpdateLottoRequestAndWaitForReceiptAsync();
+
+                        gas -= Web3.Convert.FromWei(await web3.Eth.GetBalance.SendRequestAsync(account.Address));
+
+                        Console.WriteLine($"    Update Lottery Gas: {gas}");
 
                         var events = updateLottoReceipt.DecodeAllEvents<LottoUpdateEventDTO>();
 
                         foreach(EventLog<LottoUpdateEventDTO> e in events)
                         {
-                            Console.WriteLine($"Contract competition number: {e.Event.CompetitionNumber} winning Numbers: ");
-                            foreach(BigInteger b in e.Event.Numbers)
-                            {
-                                Console.Write($"{b},");
-                            }
-                            Console.Write($" winning ids: ");
-                            for(int i = 0; i < e.Event.WinningIDs.Count; i++)
-                            {
-                                Console.Write($"{e.Event.WinningIDs[i]} ");
-                            }
+                            Console.WriteLine($"    Contract competition number: {e.Event.CompetitionNumber}");
+
+                            Console.Write($"    Winning Numbers: {string.Join(",", e.Event.Numbers)}\n");
+                            Console.Write($"    Winning IDs: {string.Join(",", e.Event.WinningIDs)}\n\n");
                         }
+
+                        var distributeVars = updateLottoReceipt.DecodeAllEvents<DistributeVariablesEventDTO>();
+
+                        foreach (EventLog<DistributeVariablesEventDTO> e in distributeVars)
+                        {
+                            Console.WriteLine($"    jackpot pool: {e.Event.JackpotPrize}, tier two pool: {e.Event.TierTwoPrize}, tier Three pool: {e.Event.TierThreePrize}\n" +
+                                $"    jackpot winners {e.Event.JackpotWinnerNum}, tier two winners {e.Event.TierTwoWinnerNum}, tier three winners {e.Event.TierthreeWinnerNum}");
+                        }
+
+                        var winningsEvents = updateLottoReceipt.DecodeAllEvents<WinningsDistributedEventDTO>();
+
+                        foreach (EventLog<WinningsDistributedEventDTO> e in winningsEvents)
+                        {
+                            Console.WriteLine($"    Winnings Distributed Event: {e.Event.CompetitionNumber}, {e.Event.Winner}, {e.Event.Prize}");
+                        }
+
+                        var poolUpdateEvents = updateLottoReceipt.DecodeAllEvents<PoolUpdateEventDTO>();
+
+                        foreach(EventLog<PoolUpdateEventDTO> e in poolUpdateEvents)
+                        {
+                            Console.WriteLine($"    Pool number: {e.Event.PoolNumber}, Staked: {e.Event.Staked}, Value: {Web3.Convert.FromWei(e.Event.Value)}");
+                        }
+
+                        Console.WriteLine();
                     }
                     catch(Exception e)
                     {
@@ -529,41 +723,36 @@ namespace TellorTimeConsole
                     }
 
                 }
-
-                // lotto = await ttdService.LottoNumbersQueryAsync();
-
-                //Console.WriteLine($"\nTellor Time lotto value: {lotto}");
-
-                /*
-                BigInteger retrieveLottoNumbers = lottoNumbers;
-
-                for(int i = 0; i < numbers.Length; i ++)
-                {
-                    Console.Write($"{retrieveLottoNumbers & mask},");
-                    retrieveLottoNumbers = retrieveLottoNumbers >> 6;
-                }*/
             }
             response.Close();
         }
 
 
         // Function to get TellorPlayground coin.
-        private static async Task Faucet()
+        private static async Task Faucet(string address)
         {
             try
             {
-                var faucetReceipt = await tpService.FaucetRequestAndWaitForReceiptAsync(account.Address);
+                var faucetReceipt = await tpgService.FaucetRequestAndWaitForReceiptAsync(address);
 
-                var playgroundBalance = Web3.Convert.FromWei(await tpService.BalanceOfQueryAsync(account.Address));
+                var playgroundBalance = Web3.Convert.FromWei(await tpgService.BalanceOfQueryAsync(address));
 
-                var totalSupply = Web3.Convert.FromWei(await tpService.TotalSupplyQueryAsync());
+                var totalSupply = Web3.Convert.FromWei(await tpgService.TotalSupplyQueryAsync());
 
-                Console.WriteLine($"TotalSupply: {totalSupply} Balance: {playgroundBalance}");
+                Console.WriteLine($"    TotalSupply: {totalSupply}, {address} Balance: {playgroundBalance}");
             }
             catch (Exception e)
             {
                 Console.WriteLine(e.Message);
             }
+        }
+
+        private static async Task networkBalance()
+        {
+            var Balance = Web3.Convert.FromWei(await web3.Eth.GetBalance.SendRequestAsync(account.Address));
+            var Trbp = Web3.Convert.FromWei(await tpgService.BalanceOfQueryAsync(account.Address));
+            var pool = Web3.Convert.FromWei(await tplService.BalanceOfQueryAsync(account.Address));
+            Console.WriteLine($"Network Balance: {Balance}, TRBP: {Trbp}, Pool Tokens {pool}\n");
         }
 
 
@@ -581,7 +770,7 @@ namespace TellorTimeConsole
                 // Read the content.
                 string responseFromServer = reader.ReadToEnd();
                 // Display the content.
-                Console.WriteLine(responseFromServer + "\n");
+                //Console.WriteLine(responseFromServer + "\n");
 
                 // Retrieve the competition number from the responseFromServer.
                 return uint.Parse(responseFromServer.Split("numero_concurso\":")[1].Split(",\"data_concurso")[0]) + 1;
@@ -589,65 +778,82 @@ namespace TellorTimeConsole
 
         }
 
-        private static async Task DeployTellorTimeContract()
+        private static async Task DeployTellorLotteryContract()
         {
-            Console.WriteLine("TellorTime contract deployment.....\n");
+            Console.WriteLine("TellorLottery contract deployment.....\n");
 
             try
             {
-                TellorTimeDeployment TTD = new TellorTimeDeployment
+                var balance = Web3.Convert.FromWei(await web3.Eth.GetBalance.SendRequestAsync(account.Address));
+
+                Console.WriteLine($"    {account.Address} balance: {balance}");
+
+                TellorPlaygroundDeployment TPD = new TellorPlaygroundDeployment
+                {
+
+                };
+
+                var tpReceipt = await TellorPlaygroundService.DeployContractAndWaitForReceiptAsync(web3, TPD);
+
+                tellorPlaygroundAddress = tpReceipt.ContractAddress;
+
+                TellorLotteryDeployment tl = new TellorLotteryDeployment
                 {
                     TellorAddress = tellorPlaygroundAddress,
                     CompetitionStart = getCompetitionStart()-1,
                 };
 
-                Console.WriteLine($"Competition Start: {TTD.CompetitionStart}\n");
+                Console.WriteLine($"    Competition Start: {tl.CompetitionStart}, Winning Numbers: ({string.Join(",",WinningNumbers(false))})\n");
 
-                // Deploy Tellor Time Contract;
-                var ttdReciept = await TellorTimeService.DeployContractAndWaitForReceiptAsync(web3, TTD);
+                // Deploy Tellor Lottery Contract;
+                var tlReceipt = await TellorLotteryService.DeployContractAndWaitForReceiptAsync(web3, tl);
 
-                // Initialize tellorTime Address
-                tellorTimeAddress = ttdReciept.ContractAddress;
+                // Initialize tellorLottery Address
+                tellorLotteryAddress = tlReceipt.ContractAddress;
+
+                // Initialize tlService
+                tlService = new TellorLotteryService(web3, tellorLotteryAddress);
+
+                // Initialize tpgService
+                tpgService = new TellorPlaygroundService(web3, tellorPlaygroundAddress);
+
+                tellorPoolAddress = await tlService.LotteryPoolQueryAsync();
+
+                // Initialize tplService
+                tplService = new TellorLotteryPoolService(web3, tellorPoolAddress);
+
 
                 // Open Settings.
                 var configFile = ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.None);
                 var Settings = configFile.AppSettings.Settings;
 
-                Settings["TellorTimeAddress"].Value = tellorTimeAddress;
+                Settings["TellorLotteryAddress"].Value = tellorLotteryAddress;
+
+                Settings["TellorPlaygroundAddress"].Value = tellorPlaygroundAddress;
+
+                Settings["TellorPoolAddress"].Value = tellorPoolAddress;
 
                 // Save Settings
                 configFile.Save(ConfigurationSaveMode.Modified);
 
                 ConfigurationManager.RefreshSection(configFile.AppSettings.SectionInformation.Name);
 
-                // Initialize ttdService
-                ttdService = new TellorTimeService(web3, tellorTimeAddress);
-
                 // Get account balance 
-                var balance = Web3.Convert.FromWei(await web3.Eth.GetBalance.SendRequestAsync(account.Address));
 
-                Console.WriteLine($"    Tellor Time address: {tellorTimeAddress}\n  Gas used: {Web3.Convert.FromWei(ttdReciept.GasUsed)}\n  {account.Address} balance: {balance}");
+                var gas =  balance - Web3.Convert.FromWei(await web3.Eth.GetBalance.SendRequestAsync(account.Address));
 
-                /*var name  = await tpService.NameQueryAsync();
+                balance = Web3.Convert.FromWei(await web3.Eth.GetBalance.SendRequestAsync(account.Address));
 
-                Console.WriteLine(name);
-                
-                var submitReceipt =  await tpService.SubmitValueRequestAndWaitForReceiptAsync(new BigInteger(2), new BigInteger(19000));
+                Console.WriteLine($"    Tellor Lottery address: {tellorLotteryAddress}\n    Gas used: {gas} \n    {account.Address} balance: {balance}");
 
-                var events = submitReceipt.DecodeAllEvents<NewValueEventDTO>();
+                Console.WriteLine($"    Tellor Playground address: {tellorPlaygroundAddress}");
 
-                foreach (EventLog<NewValueEventDTO> e in events)
-                {
-                    Console.WriteLine($"Event data: {e.Event.RequestId} {e.Event.Time} {e.Event.Value}");
-                }
+                Console.WriteLine($"    Tellor Pool address: {tellorPoolAddress}\n");
 
-                var getbtcPirce = await ttdService.SetBtcPriceRequestAndWaitForReceiptAsync();
+                Faucet(account.Address).Wait();
 
-                var btcPrice = await ttdService.BtcPriceQueryAsync();
+                Faucet(tellorPoolAddress).Wait();
 
-                var didGet = await ttdService.DidGetQueryAsync();
-
-                Console.WriteLine($"{btcPrice} {didGet}");*/
             }
             catch (Exception e)
             {
